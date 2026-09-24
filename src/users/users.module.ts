@@ -6,7 +6,6 @@ import JwtAccessGuard from '../guards/jwt-access.guard';
 
 @Module({
   imports: [AuthModule],
-  exports: [UsersModule],
   controllers: [UserController],
   providers: [UserService, JwtAccessGuard],
 })

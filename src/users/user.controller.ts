@@ -1,11 +1,14 @@
-import { Body, Controller, Get, Post, Req, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Query, Req } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import JwtAuthGuard from '../guards/jwt-access.guard';
 import { UserService } from './user.service';
 import express from 'express';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { GetAllUsersDto } from './dto/get-all-user.dto';
 
+@ApiTags('users')
+@ApiBearerAuth('access-token')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {

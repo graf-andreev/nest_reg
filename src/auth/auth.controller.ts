@@ -1,10 +1,12 @@
 import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import express from 'express';
-import * as process from 'node:process';
 import { LoginUserDto } from './dto/login-user.dto';
+import { setRefreshCookie } from './set-refresh-cookie';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -15,12 +17,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: express.Response,
   ) {
     const result = await this.authService.registerUser(createUserDto);
-    response.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === 'production',
-    });
+    setRefreshCookie(response, result.refreshToken);
     return {
       user: {
         login: result.login,
@@ -38,32 +35,28 @@ export class AuthController {
     @Res({ passthrough: true }) response: express.Response,
   ) {
     const result = await this.authService.loginUser(data);
-    response.cookie('refreshToken', result?.refreshToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === 'production',
-    });
+    setRefreshCookie(response, result.refreshToken);
     return {
       accessToken: result.accessToken,
     };
   }
 
+  @ApiCookieAuth('refreshToken')
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description:
+      'Reads httpOnly cookie refreshToken (set on register/login) and issues a new pair.',
+  })
   @Post('refresh')
   async refreshToken(
     @Req() request: express.Request,
     @Res({ passthrough: true }) response: express.Response,
   ) {
-    const oldToken: string = request.cookies['refreshToken'];
+    const oldToken: string | undefined = request.cookies['refreshToken'];
     const result = await this.authService.refreshUserToken(oldToken);
-    response.cookie('refreshToken', result?.refreshToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === 'production',
-    });
+    setRefreshCookie(response, result.refreshToken);
     return {
       accessToken: result.accessToken,
-    }
+    };
   }
 }

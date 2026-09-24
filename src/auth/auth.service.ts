@@ -24,23 +24,9 @@ export class AuthService {
       },
     });
 
-    const payload = { sub: newUser.id, email: newUser.email };
-
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '15m',
-    });
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '7d',
-    });
-
-    const hashedSession = await bcrypt.hash(refreshToken, 10);
-    await this.prismaService.user.update({
-      where: {
-        id: newUser.id,
-      },
-      data: {
-        session: hashedSession,
-      },
+    const tokens = await this.issueTokens({
+      id: newUser.id,
+      email: newUser.email,
     });
 
     return {
@@ -48,8 +34,7 @@ export class AuthService {
       email: createUserDto.email,
       age: createUserDto.age,
       about: createUserDto.about,
-      accessToken,
-      refreshToken,
+      ...tokens,
     };
   }
 
@@ -75,38 +60,67 @@ export class AuthService {
       throw new UnauthorizedException('wrong password or user login');
     }
 
-    const refreshToken = await this.jwtService.signAsync(
-      {
-        sub: userLoginData.id,
-        email: userLoginData.email,
-      },
-      {
-        expiresIn: '7d',
-      },
-    );
-    const accessToken = await this.jwtService.signAsync(
-      {
-        sub: userLoginData.id,
-        email: userLoginData.email,
-      },
-      {
-        expiresIn: '15m',
-      },
-    );
-
-    const hashedSession = await bcrypt.hash(refreshToken, 10);
-    await this.prismaService.user.update({
-      where: { id: userLoginData.id },
-      data: { session: hashedSession },
+    return this.issueTokens({
+      id: userLoginData.id,
+      email: userLoginData.email,
     });
-
-    return {
-      accessToken,
-      refreshToken,
-    };
   }
 
-  async refreshUserToken(oldToken: string) {
+  async refreshUserToken(oldToken?: string) {
+    if (!oldToken) {
+      throw new UnauthorizedException('unauthorized');
+    }
 
+    let payload: { sub: number; email: string };
+    try {
+      payload = await this.jwtService.verifyAsync<{
+        sub: number;
+        email: string;
+      }>(oldToken);
+    } catch {
+      throw new UnauthorizedException('unauthorized');
+    }
+
+    const user = await this.prismaService.user.findFirst({
+      where: { id: payload.sub, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+        session: true,
+      },
+    });
+
+    if (!user?.session) {
+      throw new UnauthorizedException('unauthorized');
+    }
+
+    const isSessionValid = await bcrypt.compare(oldToken, user.session);
+    if (!isSessionValid) {
+      throw new UnauthorizedException('unauthorized');
+    }
+
+    return this.issueTokens({
+      id: user.id,
+      email: user.email,
+    });
+  }
+
+  private async issueTokens(user: { id: number; email: string }) {
+    const payload = { sub: user.id, email: user.email };
+    const accessToken = await this.jwtService.signAsync(
+      { ...payload, type: 'access' },
+      { expiresIn: '15m' },
+    );
+    const refreshToken = await this.jwtService.signAsync(
+      { ...payload, type: 'refresh' },
+      { expiresIn: '7d' },
+    );
+
+    await this.prismaService.user.update({
+      where: { id: user.id },
+      data: { session: await bcrypt.hash(refreshToken, 10) },
+    });
+
+    return { accessToken, refreshToken };
   }
 }

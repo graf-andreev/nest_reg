@@ -29,6 +29,7 @@ export class UserService {
       skip,
       take: limit,
       omit: {
+        deletedAt: true,
         password: true,
         session: true,
       },
@@ -36,8 +37,8 @@ export class UserService {
   }
 
   async getUser(userId: number) {
-    return this.prismaService.user.findUnique({
-      where: { id: userId },
+    return this.prismaService.user.findFirst({
+      where: { id: userId, deletedAt: null },
       omit: {
         password: true,
         session: true,
@@ -50,6 +51,7 @@ export class UserService {
       where: { id: userId },
       data: {
         deletedAt: new Date(),
+        session: null,
       },
     });
     return { success: true };
