@@ -12,8 +12,7 @@ import { GetAllUsersDto } from './dto/get-all-user.dto';
 @ApiBearerAuth('access-token')
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {
-  }
+  constructor(private readonly userService: UserService) {}
 
   @UseGuards(JwtAuthGuard, isAdminGuard)
   @Get('get-all')
@@ -37,7 +36,10 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('update')
-  async updateMyAcc(@Req() request: express.Request, @Body() dto: UpdateUserDto) {
+  async updateMyAcc(
+    @Req() request: express.Request,
+    @Body() dto: UpdateUserDto,
+  ) {
     const user = request['user'] as { sub: number; email: string };
     return this.userService.updateUser(user.sub, dto);
   }

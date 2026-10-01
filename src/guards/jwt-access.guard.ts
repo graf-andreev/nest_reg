@@ -7,7 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
-import extractTokenFromHeader from './helpers'
+import extractTokenFromHeader from './helpers';
 
 @Injectable()
 export default class JwtAccessGuard implements CanActivate {

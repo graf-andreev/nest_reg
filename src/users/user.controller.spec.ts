@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Request } from 'express';
 import JwtAccessGuard from '../guards/jwt-access.guard';
+import IsAdminGuard from '../guards/is-admin.guard';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
@@ -28,6 +29,8 @@ describe('UserController', () => {
     })
       .overrideGuard(JwtAccessGuard)
       .useValue({ canActivate: () => true })
+      .overrideGuard(IsAdminGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get(UserController);
@@ -45,18 +48,18 @@ describe('UserController', () => {
     const user = { id: 4, login: 'ann' };
     userService.getUser.mockResolvedValue(user);
 
-    await expect(
-      controller.getMyInfo(requestWithUser(4)),
-    ).resolves.toEqual(user);
+    await expect(controller.getMyInfo(requestWithUser(4))).resolves.toEqual(
+      user,
+    );
     expect(userService.getUser).toHaveBeenCalledWith(4);
   });
 
   it('reads sub from the request on delete', async () => {
     userService.deleteUser.mockResolvedValue({ success: true });
 
-    await expect(
-      controller.deleteMyAcc(requestWithUser(4)),
-    ).resolves.toEqual({ success: true });
+    await expect(controller.deleteMyAcc(requestWithUser(4))).resolves.toEqual({
+      success: true,
+    });
     expect(userService.deleteUser).toHaveBeenCalledWith(4);
   });
 

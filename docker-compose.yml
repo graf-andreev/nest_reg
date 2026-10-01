@@ -3,13 +3,15 @@ version: '3.8'
 services:
   redis:
     image: redis:alpine3.16
-    container_name: redis-wsbe
+    container_name: redis-nest
     env_file: .env
     command: >
       --requirepass ${REDIS_PASSWORD} --port ${REDIS_PORT}
     ports:
       - "6379:6379"
     restart: unless-stopped
+    volumes:
+      - redisdata:/data
   postgres:
     image: postgres:16-alpine
     container_name: nest_postgres
@@ -24,3 +26,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:

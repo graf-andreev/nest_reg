@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { BalanceModule } from './balance/balance.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { BalanceModule } from './balance/balance.module';
     UsersModule,
     AuthModule,
     BalanceModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

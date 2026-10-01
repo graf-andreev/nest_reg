@@ -6,6 +6,10 @@ import express from 'express';
 import { LoginUserDto } from './dto/login-user.dto';
 import { setRefreshCookie } from './set-refresh-cookie';
 
+function asOptionalString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -52,7 +56,9 @@ export class AuthController {
     @Req() request: express.Request,
     @Res({ passthrough: true }) response: express.Response,
   ) {
-    const oldToken: string | undefined = request.cookies['refreshToken'];
+    const oldToken = asOptionalString(
+      request.cookies['refreshToken'] as unknown,
+    );
     const result = await this.authService.refreshUserToken(oldToken);
     setRefreshCookie(response, result.refreshToken);
     return {

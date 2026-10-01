@@ -20,10 +20,7 @@ describe('UserService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UserService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [UserService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get(UserService);
@@ -39,7 +36,7 @@ describe('UserService', () => {
         where: { deletedAt: null },
         skip: 0,
         take: 10,
-        omit: { deletedAt: true, password: true, session: true },
+        omit: { deletedAt: true, password: true, session: true, balance: true },
       });
     });
 

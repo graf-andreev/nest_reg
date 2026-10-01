@@ -1,7 +1,6 @@
 import { IsInt, IsNotEmpty, IsPositive } from 'class-validator';
 
-
-export class UpdateBalanceDto{
+export class UpdateBalanceDto {
   @IsNotEmpty()
   @IsInt()
   receiverId: number;

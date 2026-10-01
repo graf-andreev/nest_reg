@@ -17,7 +17,6 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
   async registerUser(createUserDto: CreateUserDto) {
-
     const newUser = await this.userService.create(createUserDto);
 
     const tokens = await this.issueTokens({
