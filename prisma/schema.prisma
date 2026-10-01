@@ -12,6 +12,8 @@ model User {
   id        Int      @id @default(autoincrement())
   login     String   @unique
   email     String   @unique
+  isAdmin   Boolean  @default(false)
+  balance   Float    @default(10)
   password  String
   age       Int
   about     String

@@ -3,10 +3,11 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { AuthModule } from '../auth/auth.module';
 import JwtAccessGuard from '../guards/jwt-access.guard';
+import IsAdminGuard from '../guards/is-admin.guard';
 
 @Module({
   imports: [AuthModule],
   controllers: [UserController],
-  providers: [UserService, JwtAccessGuard],
+  providers: [UserService, JwtAccessGuard, IsAdminGuard],
 })
 export class UsersModule {}

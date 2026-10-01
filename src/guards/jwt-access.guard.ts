@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
+import extractTokenFromHeader from './helpers'
 
 @Injectable()
 export default class JwtAccessGuard implements CanActivate {
@@ -17,7 +18,7 @@ export default class JwtAccessGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const token = this.extractTokenFromHeader(request);
+    const token = extractTokenFromHeader(request);
 
     if (!token) {
       throw new UnauthorizedException('no token');
@@ -49,12 +50,5 @@ export default class JwtAccessGuard implements CanActivate {
     }
 
     return true;
-  }
-
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const authorization = request.headers.authorization;
-    if (!authorization) return undefined;
-    const [type, token] = authorization.split(' ');
-    return type === 'Bearer' ? token : undefined;
   }
 }

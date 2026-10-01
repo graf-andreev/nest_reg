@@ -2,6 +2,7 @@ import { Body, Controller, Get, Patch, Query, Req } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import JwtAuthGuard from '../guards/jwt-access.guard';
+import isAdminGuard from '../guards/is-admin.guard';
 import { UserService } from './user.service';
 import express from 'express';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -14,7 +15,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, isAdminGuard)
   @Get('get-all')
   async getAll(@Query() query: GetAllUsersDto) {
     return this.userService.getAllUsers(query);

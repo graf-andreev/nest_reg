@@ -32,6 +32,7 @@ export class UserService {
         deletedAt: true,
         password: true,
         session: true,
+        balance: true,
       },
     });
   }
