@@ -13,6 +13,7 @@ describe('UserService', () => {
       findMany: jest.fn(),
       findFirst: jest.fn(),
       update: jest.fn(),
+      create: jest.fn(),
     },
   };
 
@@ -38,7 +39,7 @@ describe('UserService', () => {
         where: { deletedAt: null },
         skip: 0,
         take: 10,
-        omit: { password: true, session: true },
+        omit: { deletedAt: true, password: true, session: true },
       });
     });
 
@@ -118,6 +119,34 @@ describe('UserService', () => {
         data: dto,
         omit: { password: true, session: true },
       });
+    });
+  });
+
+  describe('create', () => {
+    it('hashes the password before insert', async () => {
+      const dto = {
+        login: 'ann',
+        email: 'ann@mail.com',
+        password: 'secret123',
+        age: 21,
+        about: 'hi',
+      };
+      prisma.user.create.mockResolvedValue({ id: 1, ...dto });
+
+      await service.create(dto);
+
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: {
+          login: 'ann',
+          email: 'ann@mail.com',
+          password: expect.not.stringMatching('secret123'),
+          age: 21,
+          about: 'hi',
+        },
+      });
+      const savedPassword = prisma.user.create.mock.calls[0][0].data.password;
+      expect(savedPassword).not.toBe(dto.password);
+      expect(savedPassword.startsWith('$2')).toBe(true);
     });
   });
 });

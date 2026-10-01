@@ -4,25 +4,21 @@ import { PrismaService } from '../prisma/prisma.service';
 import bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from './dto/login-user.dto';
+import { UserService } from '../users/user.service';
+import * as process from 'node:process';
+
+type JwtExpiresIn = `${number}${'s' | 'm' | 'h' | 'd'}`;
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly userService: UserService,
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
   async registerUser(createUserDto: CreateUserDto) {
-    const password = await bcrypt.hash(createUserDto.password, 10);
 
-    const newUser = await this.prismaService.user.create({
-      data: {
-        login: createUserDto.login,
-        email: createUserDto.email,
-        password: password,
-        age: createUserDto.age,
-        about: createUserDto.about,
-      },
-    });
+    const newUser = await this.userService.create(createUserDto);
 
     const tokens = await this.issueTokens({
       id: newUser.id,
@@ -107,13 +103,18 @@ export class AuthService {
 
   private async issueTokens(user: { id: number; email: string }) {
     const payload = { sub: user.id, email: user.email };
+    const accessExpiresIn = (process.env.JWT_ACCESS_EXPIRATION ??
+      '15m') as JwtExpiresIn;
+    const refreshExpiresIn = (process.env.JWT_REFRESH_EXPIRATION ??
+      '7d') as JwtExpiresIn;
+
     const accessToken = await this.jwtService.signAsync(
       { ...payload, type: 'access' },
-      { expiresIn: '15m' },
+      { expiresIn: accessExpiresIn },
     );
     const refreshToken = await this.jwtService.signAsync(
       { ...payload, type: 'refresh' },
-      { expiresIn: '7d' },
+      { expiresIn: refreshExpiresIn },
     );
 
     await this.prismaService.user.update({
