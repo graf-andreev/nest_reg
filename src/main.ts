@@ -3,9 +3,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppLogger } from './logger/app.logger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+  const logger = app.get(AppLogger);
+  app.useLogger(logger);
   app.enableShutdownHooks();
   app.useGlobalPipes(
     new ValidationPipe({
@@ -39,5 +44,11 @@ async function bootstrap() {
   });
 
   await app.listen(process.env.PORT ?? 3000);
+  logger.log(`Listening on ${await app.getUrl()}`, 'Bootstrap');
 }
-void bootstrap();
+
+void bootstrap().catch((error: unknown) => {
+  const message = error instanceof Error ? error.stack : String(error);
+  console.error('Failed to start', message);
+  process.exit(1);
+});
