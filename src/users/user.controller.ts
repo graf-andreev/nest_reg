@@ -7,6 +7,7 @@ import { UserService } from './user.service';
 import express from 'express';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { GetAllUsersDto } from './dto/get-all-user.dto';
+import { GetActiveUsersDto } from './dto/get-active-users.dto';
 
 @ApiTags('users')
 @ApiBearerAuth('access-token')
@@ -18,6 +19,12 @@ export class UserController {
   @Get('get-all')
   async getAll(@Query() query: GetAllUsersDto) {
     return this.userService.getAllUsers(query);
+  }
+
+  @UseGuards(JwtAuthGuard, isAdminGuard)
+  @Get('active')
+  async getActive(@Query() query: GetActiveUsersDto) {
+    return this.userService.getActiveUsers(query);
   }
 
   @UseGuards(JwtAuthGuard)

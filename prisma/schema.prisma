@@ -21,6 +21,8 @@ model User {
   createdAt DateTime @default(now())
   deletedAt DateTime?
   avatars   Avatar[]
+
+  @@index([age, deletedAt])
 }
 
 model Avatar {
@@ -30,4 +32,7 @@ model Avatar {
   user      User      @relation(fields: [userId], references: [id])
   createdAt DateTime  @default(now())
   deletedAt DateTime?
+
+  @@index([userId, deletedAt])
+  @@index([userId, createdAt])
 }

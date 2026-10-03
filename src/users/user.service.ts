@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import bcrypt from 'bcrypt';
 import { CreateUserDto } from '../auth/dto/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { GetAllUsersDto } from './dto/get-all-user.dto';
+import { GetActiveUsersDto } from './dto/get-active-users.dto';
 import { RedisService } from '../redis/redis.service';
 import { PublicUser } from './user.types';
 
@@ -50,6 +51,64 @@ export class UserService {
     } else {
       return JSON.parse(cash) as PublicUser[];
     }
+  }
+
+  async getActiveUsers(query: GetActiveUsersDto) {
+    const { ageFrom, ageTo, page = 1, limit = 10 } = query;
+    if (ageFrom > ageTo) {
+      throw new BadRequestException('ageFrom не может быть больше ageTo');
+    }
+
+    const grouped = await this.prismaService.avatar.groupBy({
+      by: ['userId'],
+      where: { deletedAt: null },
+      _count: { userId: true },
+      having: {
+        userId: {
+          _count: {
+            gt: 2,
+          },
+        },
+      },
+    });
+
+    const userIds = grouped.map((row) => row.userId);
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    const users = await this.prismaService.user.findMany({
+      where: {
+        id: { in: userIds },
+        deletedAt: null,
+        about: { not: '' },
+        age: { gte: ageFrom, lte: ageTo },
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      omit: {
+        deletedAt: true,
+        password: true,
+        session: true,
+      },
+      include: {
+        avatars: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            fileName: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return users.map(({ avatars, ...user }) => ({
+      ...user,
+      lastAvatar: avatars[0] ?? null,
+    }));
   }
 
   async getUser(userId: number) {
