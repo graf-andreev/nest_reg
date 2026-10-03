@@ -20,4 +20,14 @@ model User {
   session   String?
   createdAt DateTime @default(now())
   deletedAt DateTime?
+  avatars   Avatar[]
+}
+
+model Avatar {
+  id        Int       @id @default(autoincrement())
+  fileName  String
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
 }

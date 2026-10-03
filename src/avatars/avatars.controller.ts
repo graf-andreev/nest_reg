@@ -1,19 +1,42 @@
-import { Body, Controller, Delete, Param, Post } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Param,
+  ParseIntPipe,
+  Post,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import JwtAccessGuard from '../guards/jwt-access.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileSizeValidationPipe } from '../pipes/FileSizeValidationPipe';
+import express from 'express';
 import { AvatarsService } from './avatars.service';
-import { CreateAvatarDto } from './dto/create-avatar.dto';
 
 @Controller('avatars')
 export class AvatarsController {
   constructor(private readonly avatarsService: AvatarsService) {}
 
-  @Post()
-  create(@Body() createAvatarDto: CreateAvatarDto) {
-    console.log(createAvatarDto);
-    return this.avatarsService.create();
+  @Post('upload')
+  @UseGuards(JwtAccessGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  uploadFile(
+    @Req() request: express.Request,
+    @UploadedFile(FileSizeValidationPipe) file: Express.Multer.File,
+  ) {
+    const userId = request['user'] as { sub: number };
+    return this.avatarsService.upload(userId.sub, file);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.avatarsService.remove(+id);
+  @UseGuards(JwtAccessGuard)
+  @Delete('delete/:id')
+  remove(
+    @Req() request: express.Request,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const user = request['user'] as { sub: number };
+    return this.avatarsService.delete(user.sub, id);
   }
 }
