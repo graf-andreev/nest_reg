@@ -24,7 +24,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
   minio:
-    image: minio/minio:latest
+    image: pgsty/silo:latest
     container_name: nest_minio
     env_file: .env
     command: server /data --console-address ":9001"

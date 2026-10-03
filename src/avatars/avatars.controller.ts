@@ -8,7 +8,8 @@ export class AvatarsController {
 
   @Post()
   create(@Body() createAvatarDto: CreateAvatarDto) {
-    return this.avatarsService.create(createAvatarDto);
+    console.log(createAvatarDto);
+    return this.avatarsService.create();
   }
 
   @Delete(':id')
