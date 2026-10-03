@@ -1,0 +1,38 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  login     String   @unique
+  email     String   @unique
+  isAdmin   Boolean  @default(false)
+  balance   Float    @default(10)
+  password  String
+  age       Int
+  about     String
+  session   String?
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+  avatars   Avatar[]
+
+  @@index([age, deletedAt])
+}
+
+model Avatar {
+  id        Int       @id @default(autoincrement())
+  fileName  String
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  @@index([userId, deletedAt])
+  @@index([userId, createdAt])
+}

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine3.16
+    container_name: redis-nest
+    env_file: .env
+    command: >
+      --requirepass ${REDIS_PASSWORD} --port ${REDIS_PORT}
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+  postgres:
+    image: postgres:16-alpine
+    container_name: nest_postgres
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - ${DB_PORT}:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  minio:
+    image: pgsty/silo:latest
+    container_name: nest_minio
+    env_file: .env
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
