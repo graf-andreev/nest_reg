@@ -16,6 +16,7 @@ export class AuthService {
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
+
   async registerUser(createUserDto: CreateUserDto) {
     const newUser = await this.userService.create(createUserDto);
 

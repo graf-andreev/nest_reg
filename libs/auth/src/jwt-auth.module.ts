@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from '@app/prisma';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { IsAdminGuard } from './guards/is-admin.guard';
+import { JwtAuthService } from './jwt-auth.service';
 
 @Global()
 @Module({
@@ -20,7 +21,7 @@ import { IsAdminGuard } from './guards/is-admin.guard';
       }),
     }),
   ],
-  providers: [JwtAccessGuard, IsAdminGuard],
-  exports: [JwtModule, JwtAccessGuard, IsAdminGuard],
+  providers: [JwtAccessGuard, IsAdminGuard, JwtAuthService],
+  exports: [JwtModule, JwtAccessGuard, IsAdminGuard, JwtAuthService],
 })
 export class JwtAuthModule {}

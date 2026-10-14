@@ -7,8 +7,8 @@ export class NotificationServiceController {
     private readonly notificationServiceService: NotificationServiceService,
   ) {}
 
-  @Get()
-  getHello(): string {
+  @Get('from-kafka')
+  socketResend(): string {
     return this.notificationServiceService.getHello();
   }
 }
