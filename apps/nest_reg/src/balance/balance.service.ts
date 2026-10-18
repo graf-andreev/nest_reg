@@ -1,14 +1,24 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { UpdateBalanceDto } from './dto/update-balance.dto';
 import { PrismaService } from '@app/prisma';
+import { ClientKafka } from '@nestjs/microservices';
 
 @Injectable()
 export class BalanceService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientKafka,
+  ) {}
+
+  async onModuleInit() {
+    await this.kafkaClient.connect();
+  }
+
   async transferBalance(userId: number, updateBalanceDto: UpdateBalanceDto) {
     const { amount, receiverId } = updateBalanceDto;
     if (userId === receiverId) {
@@ -17,7 +27,7 @@ export class BalanceService {
       );
     }
 
-    return this.prismaService.$transaction(async (tx) => {
+    const result = this.prismaService.$transaction(async (tx) => {
       const sender = await tx.user.findUnique({
         where: { id: userId },
         select: {
@@ -56,5 +66,16 @@ export class BalanceService {
         newBalance: updateBalance.balance,
       };
     });
+
+    this.kafkaClient.emit('balance.transferred', {
+      key: String(userId),
+      value: { userId },
+    });
+    this.kafkaClient.emit('balance.transferred', {
+      key: String(receiverId),
+      value: { userId: receiverId },
+    });
+
+    return result;
   }
 }
