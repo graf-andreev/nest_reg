@@ -27,7 +27,7 @@ export class BalanceService {
       );
     }
 
-    const result = this.prismaService.$transaction(async (tx) => {
+    const result = await this.prismaService.$transaction(async (tx) => {
       const sender = await tx.user.findUnique({
         where: { id: userId },
         select: {
@@ -69,11 +69,12 @@ export class BalanceService {
 
     this.kafkaClient.emit('balance.transferred', {
       key: String(userId),
-      value: { userId },
-    });
-    this.kafkaClient.emit('balance.transferred', {
-      key: String(receiverId),
-      value: { userId: receiverId },
+      value: {
+        senderId: userId,
+        receiverId,
+        amount,
+        createdAt: new Date().toISOString(),
+      },
     });
 
     return result;

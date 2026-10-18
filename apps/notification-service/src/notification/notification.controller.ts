@@ -1,18 +1,21 @@
 import { Controller, Param, ParseIntPipe, Post } from '@nestjs/common';
-import { NotificationGateway } from './notification.gateway';
 import { EventPattern, Payload } from '@nestjs/microservices';
-
-type BalanceTransferredPayload = {
-  userId: number;
-};
+import type { BalanceTransferredPayload } from './balance-transferred.payload';
+import { NotificationGateway } from './notification.gateway';
+import { NotificationService } from './notification.service';
 
 @Controller('notifications')
 export class NotificationController {
-  constructor(private readonly notificationGateway: NotificationGateway) {}
+  constructor(
+    private readonly notificationGateway: NotificationGateway,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   @EventPattern('balance.transferred')
   handleBalanceTransferred(@Payload() payload: BalanceTransferredPayload) {
-    this.notificationGateway.sendNotification(payload.userId);
+    this.notificationGateway.sendNotification(payload.senderId);
+    this.notificationGateway.sendNotification(payload.receiverId);
+    void this.notificationService.create(payload);
   }
 
   @Post(':userId')

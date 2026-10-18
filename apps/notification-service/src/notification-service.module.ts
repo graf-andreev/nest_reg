@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { NotificationServiceController } from './notification-service.controller';
 import { NotificationServiceService } from './notification-service.service';
 import { JwtAuthModule } from '@app/auth';
@@ -9,6 +10,12 @@ import { NotificationModule } from './notification/notification.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.getOrThrow<string>('MONGO_URI'),
+      }),
+    }),
     CommonModule,
     JwtAuthModule,
     NotificationModule,

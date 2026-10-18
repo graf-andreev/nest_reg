@@ -23,6 +23,14 @@ services:
       - ${DB_PORT}:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
+  mongo:
+    image: mongo:7
+    container_name: nest_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    restart: unless-stopped
   minio:
     image: pgsty/silo:latest
     container_name: nest_minio
@@ -82,3 +90,4 @@ volumes:
   pgdata:
   redisdata:
   miniodata:
+  mongodata:
