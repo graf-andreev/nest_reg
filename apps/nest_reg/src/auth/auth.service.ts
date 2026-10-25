@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UserService } from '../users/user.service';
 import * as process from 'node:process';
+import { safeEqual, sha256 } from '@app/common';
 
 type JwtExpiresIn = `${number}${'s' | 'm' | 'h' | 'd'}`;
 
@@ -67,13 +68,18 @@ export class AuthService {
       throw new UnauthorizedException('unauthorized');
     }
 
-    let payload: { sub: number; email: string };
+    let payload: { sub: number; email: string; type: string };
     try {
       payload = await this.jwtService.verifyAsync<{
         sub: number;
         email: string;
+        type: string;
       }>(oldToken);
     } catch {
+      throw new UnauthorizedException('unauthorized');
+    }
+
+    if (payload.type !== 'refresh') {
       throw new UnauthorizedException('unauthorized');
     }
 
@@ -90,8 +96,7 @@ export class AuthService {
       throw new UnauthorizedException('unauthorized');
     }
 
-    const isSessionValid = await bcrypt.compare(oldToken, user.session);
-    if (!isSessionValid) {
+    if (!safeEqual(sha256(oldToken), Buffer.from(user.session, 'hex'))) {
       throw new UnauthorizedException('unauthorized');
     }
 
@@ -119,7 +124,7 @@ export class AuthService {
 
     await this.prismaService.user.update({
       where: { id: user.id },
-      data: { session: await bcrypt.hash(refreshToken, 10) },
+      data: { session: sha256(refreshToken).toString('hex') },
     });
 
     return { accessToken, refreshToken };

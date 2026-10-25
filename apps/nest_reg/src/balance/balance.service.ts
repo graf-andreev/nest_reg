@@ -28,42 +28,41 @@ export class BalanceService {
     }
 
     const result = await this.prismaService.$transaction(async (tx) => {
-      const sender = await tx.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          balance: true,
-        },
+      const receiver = await tx.user.findFirst({
+        where: { id: receiverId, deletedAt: null },
+        select: { id: true },
       });
-      if (!sender) throw new NotFoundException('Отправитель не найден');
-      if (sender.balance < amount) {
-        throw new BadRequestException('Недостаточно денег!');
-      }
-
-      const receiver = await tx.user.findUnique({
-        where: { id: receiverId },
-        select: {
-          id: true,
-        },
-      });
-
       if (!receiver) {
         throw new NotFoundException('Получатель не найден!');
       }
 
-      const updateBalance = await tx.user.update({
-        where: { id: sender.id },
+      const debited = await tx.user.updateMany({
+        where: { id: userId, deletedAt: null, balance: { gte: amount } },
         data: { balance: { decrement: amount } },
       });
+
+      if (debited.count === 0) {
+        const sender = await tx.user.findFirst({
+          where: { id: userId, deletedAt: null },
+          select: { id: true },
+        });
+        if (!sender) throw new NotFoundException('Отправитель не найден');
+        throw new BadRequestException('Недостаточно денег!');
+      }
 
       await tx.user.update({
         where: { id: receiverId },
         data: { balance: { increment: amount } },
       });
 
+      const sender = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { balance: true },
+      });
+
       return {
         success: true,
-        newBalance: updateBalance.balance,
+        newBalance: sender.balance,
       };
     });
 

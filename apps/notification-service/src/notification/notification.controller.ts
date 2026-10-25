@@ -1,8 +1,15 @@
-import { Controller, Param, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  Controller,
+  Param,
+  ParseIntPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import type { BalanceTransferredPayload } from './balance-transferred.payload';
 import { NotificationGateway } from './notification.gateway';
 import { NotificationService } from './notification.service';
+import { ApiKeyGuard } from '@app/auth';
 
 @Controller('notifications')
 export class NotificationController {
@@ -18,6 +25,7 @@ export class NotificationController {
     void this.notificationService.create(payload);
   }
 
+  @UseGuards(ApiKeyGuard)
   @Post(':userId')
   sendNotification(@Param('userId', ParseIntPipe) userId: number) {
     this.notificationGateway.sendNotification(userId);
